@@ -1,0 +1,44 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+develop-eggs/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.whl
+
+# C extensions
+*.so
+
+# Environment variables
+.env
+.venv
+venv/
+ENV/
+
+# IDE-specific files
+.vscode/
+.idea/
+*.pydevproject
+*.project
+*.pyproj
+
+# Jupyter Notebook files
+.ipynb_checkpoints/
+
+# Unit test / coverage reports
+.coverage
+.tox/
+htmlcov/
+.pytest_cache/
