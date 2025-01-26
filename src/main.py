@@ -22,14 +22,16 @@ bus = smbus2.SMBus(1)
 
 face = face_analysis()
 
-frame_queue = Queue(maxsize=30)  # Adjust maxsize as needed
-result_queue = Queue()  # Queue for YOLO detection results
+# Holds up to 30 frames for computation
+frame_queue = Queue(maxsize=30)
+# Queue for YOLO detection results
+result_queue = Queue() 
 
 
 def streamStart():
     streamInit()
 
-# thread for face detection
+# Thread for face detection
 def detect_faces():
     while(1):
         if not frame_queue.empty():
@@ -41,6 +43,7 @@ def detect_faces():
         else:
             time.sleep(0.01)  # Wait briefly if the queue is empty
 
+# Thread for sending commands to the neck motor 
 def motor_commands():
     while (1):
         if not result_queue.empty():
@@ -62,9 +65,8 @@ def motor_commands():
                     stopMotor()
 
 
-
+# Thread for reading input from the streamed camera input
 def camera_intake():
-    #so the stream can boot up
     time.sleep(10)
     frameCount = 0
     cap = cv2.VideoCapture("http://10.42.0.100:7123/stream.mjpg")
@@ -85,7 +87,7 @@ def camera_intake():
                 print(f"Frame Queue Full, dropping frame {frameCount}")
 
 
-
+# Motor initialization. Will replace
 def motorSpin():
     motorInit()
     turnLeft()
@@ -95,23 +97,22 @@ def motorSpin():
     stopMotor()
     print("Motor Running")
 
+# Runs all of the threads
 if __name__ == '__main__':
-    streamProcess = threading.Thread(target = streamStart)
-
-    cameraProcess = threading.Thread(target = camera_intake)
+    stream_thread = threading.Thread(target = streamStart)
+    camera_thread = threading.Thread(target = camera_intake)
     detection_thread = threading.Thread(target = detect_faces)
     result_thread = threading.Thread(target = motor_commands)
+    motor_thread = threading.Thread(target = motorSpin)
 
-    motorProcess = threading.Thread(target = motorSpin)
-
-    streamProcess.start()
-    cameraProcess.start()
+    stream_thread.start()
+    camera_thread.start()
     detection_thread.start()
     result_thread.start()
-    motorProcess.start()
+    motor_thread.start()
 
-    streamProcess.join()
-    cameraProcess.join()
+    stream_thread.join()
+    camera_thread.join()
     detection_thread.join()
     result_thread.join()
-    motorProcess.join()
+    motor_thread.join()
