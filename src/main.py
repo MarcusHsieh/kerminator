@@ -16,8 +16,6 @@ from motorFunction import turnLeft
 from motorFunction import stopMotor
 from cameraFeed import streamInit
 
-
-kit = ServoKit(channels=16)
 bus = smbus2.SMBus(1)
 
 face = face_analysis()
@@ -41,7 +39,7 @@ def detect_faces():
             _, box, conf = face.face_detection(frame_arr=frame, frame_status=True, model='tiny')
             result_queue.put(box)
         else:
-            time.sleep(0.01)  # Wait briefly if the queue is empty
+            time.sleep(0.01)
 
 # Thread for sending commands to the neck motor 
 def motor_commands():
