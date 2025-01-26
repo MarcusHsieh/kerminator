@@ -36,40 +36,54 @@ def stopMotor():
     bus.write_byte_data(0x40, 0x08, 0x00)  # PWM 01 off LSB is 32 measured
     bus.write_byte_data(0x40, 0x09, 0x00)  # PWM 01 off MSB is 01 measured
     bus.close()
-
-def servosInit():
-    print("Running servos")
-    # Create servo instances
-
-
-def main():
-    motorInit()
-    turnLeft()
-    time.sleep(3)
-    turnRight()
-    time.sleep(3)
-    stopMotor()
     
-
-
-    # Initialize and control servos
+def servoWave():
     i2c = board.I2C()  # Setup I2C for PCA9685
     pca = PCA9685(i2c)
     pca.frequency = 50
-
-    servo14 = servo.Servo(pca.channels[14])
-    servo15 = servo.Servo(pca.channels[15])
-
-    # Run servo motion
-    for i in range(90):
-        servo14.angle = 90 - i
-        servo15.angle = i
+    servo13 = servo.Servo(pca.channels[13])
+    for i in range(180):
+        servo13.angle = 180 - i
         time.sleep(0.03)
-    for i in range(90):
-        servo14.angle = i
-        servo15.angle = 90 - i
+    for i in range(180):
+        servo13.angle = i
         time.sleep(0.03)
+    pca.deinit()
 
 
-if __name__ == '__main__':
-    main()
+# def servosInit():
+#     print("Running servos")
+#     # Create servo instances
+
+
+# def main():
+#     motorInit()
+#     turnLeft()
+#     time.sleep(3)
+#     turnRight()
+#     time.sleep(3)
+#     stopMotor()
+    
+
+
+#     # Initialize and control servos
+#     i2c = board.I2C()  # Setup I2C for PCA9685
+#     pca = PCA9685(i2c)
+#     pca.frequency = 50
+
+#     servo14 = servo.Servo(pca.channels[14])
+#     servo15 = servo.Servo(pca.channels[15])
+
+#     # Run servo motion
+#     for i in range(90):
+#         servo14.angle = 90 - i
+#         servo15.angle = i
+#         time.sleep(0.03)
+#     for i in range(90):
+#         servo14.angle = i
+#         servo15.angle = 90 - i
+#         time.sleep(0.03)
+
+
+# if __name__ == '__main__':
+#     main()

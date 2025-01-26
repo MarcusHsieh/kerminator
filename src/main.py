@@ -14,11 +14,12 @@ from motorFunction import motorInit
 from motorFunction import turnRight
 from motorFunction import turnLeft
 from motorFunction import stopMotor
+from motorFunction import servoWave
 from cameraFeed import streamInit
 
-bus = smbus2.SMBus(1)
 
 face = face_analysis()
+wave = 0
 
 # Holds up to 30 frames for computation
 frame_queue = Queue(maxsize=30)
@@ -28,6 +29,13 @@ result_queue = Queue()
 
 def streamStart():
     streamInit()
+
+# Thread for waving
+def waving():
+    while (1):
+        if (wave == 1):
+            servoWave()
+            wave = 0
 
 # Thread for face detection
 def detect_faces():
@@ -55,12 +63,12 @@ def motor_commands():
                     print("turning Left")
                     turnLeft()
                     time.sleep(0.01667)
-                    stopMotor()
+                    # stopMotor()
                 elif (center[0] > 427):
                     print("turning right")
                     turnRight()
                     time.sleep(0.01667)
-                    stopMotor()
+                    # stopMotor()
 
 
 # Thread for reading input from the streamed camera input
@@ -102,15 +110,18 @@ if __name__ == '__main__':
     detection_thread = threading.Thread(target = detect_faces)
     result_thread = threading.Thread(target = motor_commands)
     motor_thread = threading.Thread(target = motorSpin)
+    wave_thread = threading.Thread(target = waving)
 
     stream_thread.start()
     camera_thread.start()
     detection_thread.start()
     result_thread.start()
     motor_thread.start()
+    wave_thread.start()
 
     stream_thread.join()
     camera_thread.join()
     detection_thread.join()
     result_thread.join()
     motor_thread.join()
+    wave_thread.join()
