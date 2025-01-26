@@ -3,6 +3,7 @@ import time
 import smbus2
 import cv2
 import numpy as np
+from yoloface import face_analysis
 from multiprocessing import Process
 from adafruit_servokit import ServoKit
 
@@ -13,6 +14,7 @@ from motorFunction import turnLeft
 from motorFunction import stopMotor
 from cameraFeed import streamInit
 
+kit = ServoKit(channels=16)
 bus = smbus2.SMBus(1)
 
 def streamStart():
@@ -20,28 +22,35 @@ def streamStart():
 
 def cameraInit():
     time.sleep(10)
+    face = face_analysis()
     cap = cv2.VideoCapture("http://10.42.0.100:7123/stream.mjpg")
-    face_frontal_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_eye.xml")
-    # face_alt1_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt1.xml")
+    # face_frontal_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_eye.xml")
+    # # face_alt1_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt1.xml")
 
-    face_alt2_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt2.xml")
-    face_alt_tree_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt_tree.xml")
-    # face_profle_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+    # face_alt2_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt2.xml")
+    # face_alt_tree_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt_tree.xml")
+    # # face_profle_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
 
     while(1):
-        ret, frame = cap.read()
+        _, frame = cap.read()
 
-        if not ret:
+        if not _:
             print("Error: Failed to grab frame.")
             break
 
-        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        found = face_frontal_classifier.detectMultiScale(gray_frame, minSize = (24, 24), scaleFactor=1.1, minNeighbors=12)
-        amount_found = len(found)
+     
+        _, frame = cap.read()
+        _, box, conf = face.face_detection(frame_arr=frame,frame_status=True,model='tiny')
 
 
-        print(f"Amount Found: {amount_found}")
-        sorted_rects = sorted(found, key=lambda r: r[2] * r[3], reverse=True)
+        # gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # found = face_frontal_classifier.detectMultiScale(gray_frame, minSize = (24, 24), scaleFactor=1.1, minNeighbors=12)
+        # amount_found = len(found)
+
+
+        # print(f"Amount Found: {amount_found}")
+        sorted_rects = sorted(box, key=lambda r: r[2] * r[3], reverse=True)
+        print(f"Amount_Found: {len(sorted_rects)}")
 
         if (len(sorted_rects) > 0):
             # Calculate center coordinates of largest rectangle
@@ -57,6 +66,14 @@ def cameraInit():
                 stopMotor()
 
 def motorSpin():
+
+    kit.servo[1].angle = 60
+    time.sleep(3)
+    kit.servo[1].angle = 120
+    time.sleep(3)
+    kit.servo[1].angle = 60
+    time.sleep(3)
+
     motorInit()
     for i in range(1):
         turnLeft()
