@@ -5,6 +5,8 @@ import cv2
 import numpy as np
 from yoloface import face_analysis
 from multiprocessing import Process
+import threading
+import queue
 from adafruit_servokit import ServoKit
 
 # Function Imports
@@ -14,78 +16,87 @@ from motorFunction import turnLeft
 from motorFunction import stopMotor
 from cameraFeed import streamInit
 
+
 kit = ServoKit(channels=16)
 bus = smbus2.SMBus(1)
+
+face = face_analysis()
+result_queue = queue.Queue()
+
 
 def streamStart():
     streamInit()
 
-def cameraInit():
-    time.sleep(10)
-    face = face_analysis()
-    cap = cv2.VideoCapture("http://10.42.0.100:7123/stream.mjpg")
-    # face_frontal_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_eye.xml")
-    # # face_alt1_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt1.xml")
+def detect_faces(frame):
+    # Run face detection
+    _, box, conf = face.face_detection(frame_arr=frame, frame_status=True, model='tiny')
+    result_queue.put(box)
 
-    # face_alt2_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt2.xml")
-    # face_alt_tree_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt_tree.xml")
-    # # face_profle_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+def cameraIntake():
+    time.sleep(10)
+    cap = cv2.VideoCapture("http://10.42.0.100:7123/stream.mjpg")
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    
+    frame_count = 0
 
     while(1):
         _, frame = cap.read()
+        frame_count += 1
 
         if not _:
             print("Error: Failed to grab frame.")
             break
 
-     
-        _, frame = cap.read()
-        _, box, conf = face.face_detection(frame_arr=frame,frame_status=True,model='tiny')
+        frame_skip = 10 # Process every 5 frames
+        print(f"Frame Count: {frame_count}")
+        if frame_count % frame_skip == 0:
+            detection_thread = threading.Thread(target = detect_faces, args = (frame,))
+            detection_thread.start()
+            detection_thread.join()
 
 
-        # gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        # found = face_frontal_classifier.detectMultiScale(gray_frame, minSize = (24, 24), scaleFactor=1.1, minNeighbors=12)
-        # amount_found = len(found)
+            if not result_queue.empty():
+                box = result_queue.get()
+                if len(box)>0:
+                    # Calculate center coordinates of largest rectangle
+                    center = (box[0][0] + int(box[0][2]/2), box[0][1] + int(box[0][3]/2))
+                    print(f"Center Coordinates: ({center[0]}, {center[1]}) ")
+                    if (center[0] < 213):
+                        print("turning Left")
+                        turnLeft()
+                        time.sleep(0.1667)
+                        stopMotor()
+                    elif (center[0] > 427):
+                        print("turning right")
+                        turnRight()
+                        time.sleep(0.1667)
+                        stopMotor()
 
 
-        # print(f"Amount Found: {amount_found}")
-        sorted_rects = sorted(box, key=lambda r: r[2] * r[3], reverse=True)
-        print(f"Amount_Found: {len(sorted_rects)}")
-
-        if (len(sorted_rects) > 0):
-            # Calculate center coordinates of largest rectangle
-            center = (sorted_rects[0][0] + int(sorted_rects[0][2]/2), sorted_rects[0][1] + int(sorted_rects[0][3]/2))
-            print(f"Center Coordinates: ({center[0]}, {center[1]}) ")
-            if (center[0] > 500):
-                turnLeft()
-                time.sleep(0.5)
-                stopMotor()
-            elif (center[0] < 140):
-                turnRight()
-                time.sleep(0.5)
-                stopMotor()
 
 def motorSpin():
 
-    kit.servo[1].angle = 60
-    time.sleep(3)
-    kit.servo[1].angle = 120
-    time.sleep(3)
-    kit.servo[1].angle = 60
-    time.sleep(3)
 
     motorInit()
-    for i in range(1):
-        turnLeft()
-        time.sleep(3)
-        turnRight()
-        time.sleep(3)
+
+    kit.servo[15].angle(0)
+    time(1)
+    kit.servo[15].angle(180)
+    time(1)
+    kit.servo[15].angle(0)
+    time(1)
+
+    # turnLeft()
+    # time.sleep(3)
+    # turnRight()
+    # time.sleep(3)
     stopMotor()
     print("Motor Running")
 
 if __name__ == '__main__':
     streamProcess = Process(target = streamStart)
-    cameraProcess = Process(target = cameraInit)
+    cameraProcess = Process(target = cameraIntake)
     motorProcess = Process(target = motorSpin)
 
     streamProcess.start()
