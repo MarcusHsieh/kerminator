@@ -42,3 +42,6 @@ ENV/
 .tox/
 htmlcov/
 .pytest_cache/
+
+# laptop wav files
+laptop/*.wav
