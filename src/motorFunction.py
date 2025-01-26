@@ -12,16 +12,15 @@ def motorInit():
 def turnLeft():
     bus.write_byte_data(0x40,0x06,0x00)  # PWM 01 config
     bus.write_byte_data(0x40,0x07,0x00)  # PWM 01 config
-    bus.write_byte_data(0x40,0x08,0x98)  # PWM 01 full fwd LSB is 98 measured
+    bus.write_byte_data(0x40,0x08,0xCC)  # PWM 01 full fwd LSB is 98 measured
     bus.write_byte_data(0x40,0x09,0x01)  # PWM 01 full fwd MSB is 01 measured
-    # time.sleep(0.05)
+    
 
 def turnRight():
     bus.write_byte_data(0x40,0x06,0x00)  # PWM 01 config
     bus.write_byte_data(0x40,0x07,0x00)  # PWM 01 config
     bus.write_byte_data(0x40,0x08,0xCC)  # PWM 01 full fwd LSB is 98 measured
     bus.write_byte_data(0x40,0x09,0x00)  # PWM 01 full fwd MSB is 01 measured
-    # time.sleep(0.05) # Moves for 0.05 seconds
 
 def stopMotor():
     bus.write_byte_data(0x40,0x06,0x00)  # PWM 01 config
