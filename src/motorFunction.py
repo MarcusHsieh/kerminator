@@ -67,7 +67,7 @@ def speak():
     pca.frequency = 50
     servo14 = servo.Servo(pca.channels[14])
     servo15 = servo.Servo(pca.channels[15])
-    while(1):
+    for i in range(4):
         servo14.angle = 0
         servo15.angle = 60
         time.sleep(0.1)

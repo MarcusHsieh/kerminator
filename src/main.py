@@ -62,24 +62,32 @@ def detect_faces():
 
 # Thread for sending commands to the neck motor 
 def motor_commands():
+    skip_frames = 0
     while (1):
         if not result_queue.empty():
             box = result_queue.get()
+
+            # If we need to skip frames
+            if skip_frames > 0:
+                skip_frames -= 1  # Decrement the skip counter
+                print(f"Skipping frame, {skip_frames} left")
+                continue  # Skip this iteration
             # Calculate center coordinates of largest rectangle
             if len(box) > 0:
                 print(box)
                 center = (box[0][0] + int(box[0][2]/2), box[0][1] + int(box[0][3]/2))
                 print(f"Center Coordinates: ({center[0]}, {center[1]}) ")
                 if (center[0] < 213):
+                    print("turning Right")
+                    turnRight()
+                    time.sleep(0.01667)
+                    stopMotor()
+                elif (center[0] > 427):
                     print("turning Left")
                     turnLeft()
                     time.sleep(0.01667)
-                    # stopMotor()
-                elif (center[0] > 427):
-                    print("turning right")
-                    turnRight()
-                    time.sleep(0.01667)
-                    # stopMotor()
+                    stopMotor()
+                skip_frames = 10
 
 
 # Thread for reading input from the streamed camera input
@@ -105,6 +113,7 @@ def camera_intake():
 
 # Runs all of the threads
 if __name__ == '__main__':
+    stopMotor()
     stream_thread = threading.Thread(target = streamStart)
     camera_thread = threading.Thread(target = camera_intake)
     detection_thread = threading.Thread(target = detect_faces)
