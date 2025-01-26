@@ -77,9 +77,9 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
 
 output = StreamingOutput()
 
-def cameraInit():
+def streamInit():
     picam2 = Picamera2()
-    picam2.configure(picam2.create_video_configuration(main={"size": (1920, 1080)}))
+    picam2.configure(picam2.create_video_configuration(main={"size": (640, 480)}))
     picam2.start_recording(JpegEncoder(), FileOutput(output))
 
     try:
@@ -88,3 +88,4 @@ def cameraInit():
         server.serve_forever()
     finally:
         picam2.stop_recording()
+
