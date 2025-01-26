@@ -1,6 +1,7 @@
-from micinput import record_audio
+from micinput import MicRecorder
 from whisperSTT import transcribe_audio
 from nlpkermit import KermitResponder
+
 import tkinter as tk
 from threading import Thread
 from PIL import Image, ImageTk
@@ -11,10 +12,12 @@ class KermitGUI:
         self.root.title("Kerminator")
         self.root.geometry("1280x800")
         self.root.configure(bg="#C0D3C5")
-        self.root.attributes("-alpha", "0.0")
 
         # init kermit responder class
         self.kermit = KermitResponder()
+
+        # create a MicRecorder instance
+        self.mic_recorder = MicRecorder(file_name="micinput.wav")
 
         # state variables
         self.is_recording = False
@@ -32,11 +35,10 @@ class KermitGUI:
             kermit_image = Image.open("public/kermit-think.png")
             kermit_image = kermit_image.resize((200, 200), Image.LANCZOS)
             self.kermit_photo = ImageTk.PhotoImage(kermit_image)
-
             kermit_image_label = tk.Label(self.root, image=self.kermit_photo, bg="#C0D3C5")
             kermit_image_label.place(relx=0.5, rely=0.21, anchor="center")
         except FileNotFoundError:
-            print("Error: Background image 'kermit-think.png' not found.")
+            print("Error: 'kermit-think.png' not found.")
 
         # main frame
         frame_width = 700
@@ -88,7 +90,7 @@ class KermitGUI:
         # mic button
         self.mic_button = tk.Button(
             frame,
-            text="  Press Spacebar to Record  ",
+            text="Press Spacebar to Record",
             command=self.toggle_microphone,
             bg="#4caf50",
             fg="white",
@@ -102,48 +104,55 @@ class KermitGUI:
         self.mic_button.pack(pady=20)
 
     def toggle_microphone(self, event=None):
-        """toggles microphone recording on/off"""
-        # check process overlap
+        """Toggles microphone recording on/off with spacebar."""
+        # ensure NO interrupt if alreading in pipeline
         if self.is_processing:
-            self.update_text(self.kermit_response_text, "Pipeline is in progress. Please wait...")
+            self.update_text(self.kermit_response_text, "Pipeline in progress. Please wait...")
             return
 
-        # check is recording
+        # check if currently recording
         if self.is_recording:
+            # stop recording + start the pipeline in a separate thread
             self.stop_recording()
+            Thread(target=self.process_audio, daemon=True).start()
         else:
+            # start recording
             self.start_recording()
 
     def start_recording(self):
-        """starts microphone recording process"""
+        """Begins microphone recording."""
         self.is_recording = True
-        self.is_processing = True
-        self.mic_button.config(text="Recording...", bg="#d32f2f", activebackground="#c62828")
+        self.mic_button.config(text="Recording... (press Space to stop)", bg="#d32f2f", activebackground="#c62828")
 
-        # clear previous text
+        # clear previous texts
         self.clear_text(self.user_input_text)
         self.clear_text(self.kermit_response_text)
 
-        # run the recording process in a separate thread to prevent ui freezing
-        Thread(target=self.process_audio, daemon=True).start()
+        # start capturing audio
+        self.mic_recorder.start_recording()
 
     def stop_recording(self):
-        """stops microphone recording process"""
+        """Stops microphone recording."""
         self.is_recording = False
-        self.mic_button.config(text="  Press Spacebar to Start  ", bg="#4caf50", activebackground="#388e3c")
+        self.mic_button.config(text="Press Spacebar to Record", bg="#4caf50", activebackground="#388e3c")
+
+        # stop mic recording
+        self.mic_recorder.stop_recording()
 
     def process_audio(self):
-        """handles audio recording, transcription, and response generation"""
+        """
+        Handles the pipeline: 
+        1) Transcribe audio 
+        2) Generate Kermit's response
+        """
         try:
-            # record audio
-            record_audio()
-
-            # transcribe audio
+            self.is_processing = True
+            # STT
             self.update_text(self.user_input_text, "Transcribing audio...")
-            transcribed_text = transcribe_audio()
+            transcribed_text = transcribe_audio(file_name="micinput.wav")
             self.update_text(self.user_input_text, transcribed_text)
 
-            # generate kermit's response
+            # NLP
             self.update_text(self.kermit_response_text, "Generating response...")
             response = self.kermit.get_response(transcribed_text)
             self.update_text(self.kermit_response_text, response)
@@ -152,8 +161,7 @@ class KermitGUI:
             self.update_text(self.kermit_response_text, f"Error: {str(e)}")
 
         finally:
-            self.is_processing = False  # UNLOCK PROCESSING
-            self.stop_recording()
+            self.is_processing = False
 
     def update_text(self, text_widget, content):
         """Updates a text widget with new content."""
@@ -168,6 +176,7 @@ class KermitGUI:
     def run(self):
         """tkinter main loop"""
         self.root.mainloop()
+        self.mic_recorder.terminate()
 
 
 if __name__ == "__main__":
