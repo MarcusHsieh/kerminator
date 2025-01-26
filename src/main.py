@@ -15,11 +15,10 @@ from motorFunction import turnRight
 from motorFunction import turnLeft
 from motorFunction import stopMotor
 from motorFunction import servoWave
+from motorFunction import speak
 from cameraFeed import streamInit
 
-
 face = face_analysis()
-wave = 0
 
 # Holds up to 30 frames for computation
 frame_queue = Queue(maxsize=30)
@@ -31,11 +30,23 @@ def streamStart():
     streamInit()
 
 # Thread for waving
+wave = 1
 def waving():
     while (1):
+        global wave
         if (wave == 1):
             servoWave()
             wave = 0
+            break
+
+speakbit = 1
+def speakTask():
+    global speakbit
+    while(1):
+        if (speakbit == 1):
+            speak()
+            speakbit = 0
+            break
 
 # Thread for face detection
 def detect_faces():
@@ -92,36 +103,28 @@ def camera_intake():
             else:
                 print(f"Frame Queue Full, dropping frame {frameCount}")
 
-
-# Motor initialization. Will replace
-def motorSpin():
-    motorInit()
-    turnLeft()
-    time.sleep(0.5)
-    turnRight()
-    time.sleep(0.5)
-    stopMotor()
-    print("Motor Running")
-
 # Runs all of the threads
 if __name__ == '__main__':
     stream_thread = threading.Thread(target = streamStart)
     camera_thread = threading.Thread(target = camera_intake)
     detection_thread = threading.Thread(target = detect_faces)
     result_thread = threading.Thread(target = motor_commands)
-    motor_thread = threading.Thread(target = motorSpin)
+    # motor_thread = threading.Thread(target = motorSpin)
     wave_thread = threading.Thread(target = waving)
+    # speak_thread = threading.Thread(target = speakTask)
 
     stream_thread.start()
     camera_thread.start()
     detection_thread.start()
     result_thread.start()
-    motor_thread.start()
+    # motor_thread.start()
     wave_thread.start()
+    # speak_thread.start()
 
     stream_thread.join()
     camera_thread.join()
     detection_thread.join()
     result_thread.join()
-    motor_thread.join()
+    # motor_thread.join()
     wave_thread.join()
+    # speak_thread.join()
