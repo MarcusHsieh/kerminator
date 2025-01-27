@@ -25,5 +25,5 @@ def turnRight():
 def stopMotor():
     bus.write_byte_data(0x40,0x06,0x00)  # PWM 01 config
     bus.write_byte_data(0x40,0x07,0x00)  # PWM 01 config
-    bus.write_byte_data(0x40,0x08,0x32)  # PWM 01 off LSB is 32 measured
-    bus.write_byte_data(0x40,0x09,0x01)  # PWM 01 off MSB is 01 measured
+    bus.write_byte_data(0x40,0x08,0x00)  # PWM 01 off LSB is 32 measured
+    bus.write_byte_data(0x40,0x09,0x00)  # PWM 01 off MSB is 01 measured

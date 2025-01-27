@@ -1,2 +1,5 @@
-# kerminator
-Rose Hack 2025
+Run the following command to install required packages
+
+```bash
+pip install -r requirements.txt
+```
